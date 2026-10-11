@@ -16,7 +16,7 @@ built on .NET 10.
 dotnet run --project src/FileTransferPoc.Api --launch-profile http
 ```
 
-In Development the API seeds two sample files for organization `123456789` and exposes a Maskinporten stand-in:
+In Development the API seeds two sample files in service `TestDomain` for organization `123456789` and exposes a Maskinporten stand-in:
 
 ```sh
 TOKEN=$(curl -s -d consumer_org=123456789 -d scope=esas:filer \
@@ -63,6 +63,7 @@ Behind a reverse proxy, list it under `ForwardedHeaders:KnownProxies` so the log
 ```json
 {
   "id": "550e8400-e29b-41d4-a716-446655440000",
+  "serviceName": "TestDomain",
   "filePath": "550e8400-e29b-41d4-a716-446655440000",
   "allowedOrganizations": ["123456789"],
   "publishedAt": "2026-10-11T19:00:00+00:00"

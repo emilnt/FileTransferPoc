@@ -48,6 +48,7 @@ public sealed class LocalFileStore : IFileStore
 
     public async Task<FileRecord> PublishAsync(
         Guid id,
+        string serviceName,
         Stream content,
         IReadOnlyList<string> allowedOrganizations,
         DateTimeOffset publishedAt,
@@ -61,7 +62,7 @@ public sealed class LocalFileStore : IFileStore
             await content.CopyToAsync(target, cancellationToken);
         }
 
-        var record = new FileRecord(id, relativePath, allowedOrganizations, publishedAt);
+        var record = new FileRecord(id, serviceName, relativePath, allowedOrganizations, publishedAt);
         await using (var metadata = new FileStream(MetadataPath(id), FileMode.CreateNew, FileAccess.Write))
         {
             await JsonSerializer.SerializeAsync(metadata, record, JsonOptions, cancellationToken);

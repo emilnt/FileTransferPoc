@@ -8,6 +8,7 @@ public interface IFileStore
     /// <summary>Copies <paramref name="content"/> into the store and writes its metadata record.</summary>
     Task<FileRecord> PublishAsync(
         Guid id,
+        string serviceName,
         Stream content,
         IReadOnlyList<string> allowedOrganizations,
         DateTimeOffset publishedAt,

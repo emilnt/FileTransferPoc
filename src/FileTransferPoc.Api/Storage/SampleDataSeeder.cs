@@ -11,6 +11,7 @@ public sealed class SampleDataSeeder(
     ILogger<SampleDataSeeder> logger) : IHostedService
 {
     public const string SampleOrganization = "123456789";
+    public const string SampleServiceName = "TestDomain";
     public static readonly Guid SmallFileId = Guid.Parse("550e8400-e29b-41d4-a716-446655440000");
     public static readonly Guid LargeFileId = Guid.Parse("6f1c2a7e-3b4d-4e5f-8a9b-0c1d2e3f4a5b");
 
@@ -40,8 +41,8 @@ public sealed class SampleDataSeeder(
         }
 
         using var stream = new MemoryStream(content);
-        await store.PublishAsync(id, stream, [SampleOrganization], timeProvider.GetUtcNow(), cancellationToken);
-        logger.LogInformation("Seeded sample file {FileId} ({Length} bytes) for organization {OrganizationNumber}",
-            id, content.Length, SampleOrganization);
+        await store.PublishAsync(id, SampleServiceName, stream, [SampleOrganization], timeProvider.GetUtcNow(), cancellationToken);
+        logger.LogInformation("Seeded sample file {FileId} ({Length} bytes) in service {ServiceName} for organization {OrganizationNumber}",
+            id, content.Length, SampleServiceName, SampleOrganization);
     }
 }

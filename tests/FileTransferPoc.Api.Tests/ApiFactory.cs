@@ -14,6 +14,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     public const string AllowedOrg = "123456789";
     public const string OtherOrg = "987654321";
     public const string Scope = "esas:filer";
+    public const string ServiceName = "TestDomain";
 
     private readonly string _root = Path.Combine(Path.GetTempPath(), "ftpoc-tests-" + Guid.NewGuid().ToString("N"));
 
@@ -45,6 +46,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
         using var stream = new MemoryStream(content);
         await Services.GetRequiredService<IFileStore>().PublishAsync(
             id,
+            ServiceName,
             stream,
             allowed.Length > 0 ? allowed : [AllowedOrg],
             publishedAt ?? DateTimeOffset.UtcNow.AddMinutes(-1),

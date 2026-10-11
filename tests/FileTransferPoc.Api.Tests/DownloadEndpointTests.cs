@@ -281,7 +281,7 @@ public class DownloadEndpointTests(ApiFactory factory) : IClassFixture<ApiFactor
         public Task<StoredFile?> FindAsync(Guid id, CancellationToken cancellationToken) =>
             throw new IOException("Disk on fire");
 
-        public Task<FileRecord> PublishAsync(Guid id, Stream content, IReadOnlyList<string> allowedOrganizations, DateTimeOffset publishedAt, CancellationToken cancellationToken) =>
+        public Task<FileRecord> PublishAsync(Guid id, string serviceName, Stream content, IReadOnlyList<string> allowedOrganizations, DateTimeOffset publishedAt, CancellationToken cancellationToken) =>
             throw new NotSupportedException();
     }
 }
