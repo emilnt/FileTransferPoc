@@ -29,26 +29,27 @@ Console.CancelKeyPress += (_, e) =>
     cts.Cancel();
 };
 
+using var http = new HttpClient { Timeout = Timeout.InfiniteTimeSpan };
 using var signingKey = RSA.Create();
+ITokenProvider tokens;
 if (options.KeyPath is not null)
 {
     signingKey.ImportFromPem(await File.ReadAllTextAsync(options.KeyPath));
+    tokens = new MaskinportenTokenProvider(http, new MaskinportenClientOptions
+    {
+        TokenEndpoint = options.TokenEndpoint,
+        Audience = options.Audience,
+        ClientId = options.ClientId!,
+        Scope = options.Scope,
+        SigningKey = signingKey,
+        KeyId = options.KeyId,
+    });
 }
 else
 {
-    Console.Error.WriteLine("warning: no --key given; signing the Maskinporten assertion with a throwaway key (only works against the stub issuer).");
+    Console.Error.WriteLine($"no --key given; using the Maskinporten stub at {options.TokenEndpoint} as {options.ConsumerOrganization}");
+    tokens = new MaskinportenStubTokenProvider(http, options.TokenEndpoint, options.ConsumerOrganization, options.Scope);
 }
-
-using var http = new HttpClient { Timeout = Timeout.InfiniteTimeSpan };
-var tokens = new MaskinportenTokenProvider(http, new MaskinportenOptions
-{
-    TokenEndpoint = options.TokenEndpoint,
-    Audience = options.Audience,
-    ClientId = options.ClientId,
-    Scope = options.Scope,
-    SigningKey = signingKey,
-    KeyId = options.KeyId,
-});
 
 var downloader = new DocumentDownloader(http, tokens, new DownloadOptions
 {

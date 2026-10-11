@@ -2,19 +2,24 @@
 
 Console client for the ESAS [HenteDokumentViaHttps](https://github.com/domstolene/ESAS/blob/main/rfc/HenteDokumentViaHttps.md) spec.
 
+With the API running in Development (`dotnet run --project src/FileTransferPoc.Api --launch-profile http`):
+
 ```sh
 dotnet run --project src/FileTransferPoc.Client -- \
-  550e8400-e29b-41d4-a716-446655440000 \
-  --base-url http://localhost:5000 \
-  --checksum sha256:<hex from the message> \
-  --out document.pdf
+  6f1c2a7e-3b4d-4e5f-8a9b-0c1d2e3f4a5b \
+  --checksum sha256:38396e6dcf327c8bb3bdfe4c78cee671ac155ccad87016bbebf7d32ecb659f04 \
+  --out large.bin
 ```
+
+That fetches the API's seeded 10 MiB sample from `http://localhost:5005` as organization `123456789`.
+Run `--help` for every option.
 
 What it does:
 
-- **Auth**: gets a token with the Maskinporten JWT-bearer grant (signed RS256 assertion, `iss`/`aud`/`scope`/`iat`/`exp`/`jti`)
-  from `--token-endpoint` (defaults to `<base-url>/token`, the PoC's stub issuer). Tokens are cached until 30s before expiry,
-  and a 401 triggers one refresh. Without `--key` a throwaway key signs the assertion, which only the stub accepts.
+- **Auth**: without `--key` it asks the API's Development stub (`POST /maskinporten-stub/token` with `consumer_org` and `scope`).
+  With `--key` and `--client-id` it uses real Maskinporten's JWT-bearer grant: a signed RS256 assertion with
+  `iss`/`aud`/`scope`/`iat`/`exp`/`jti`, sent to `--token-endpoint` (default `https://test.maskinporten.no/token`).
+  Either way the token is cached until 30s before expiry, and a 401 triggers one refresh. Scope defaults to `esas:filer`.
 - **Resume**: bytes go to `<out>.part`. A dropped connection, or a new run of the same command, continues with
   `Range: bytes=<part length>-`. A 200 to a ranged request restarts from zero; a 416 with `bytes */N` when the part
   already holds N bytes counts as done. `--chunk-size` asks for fixed-size ranges instead.

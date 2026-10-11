@@ -14,20 +14,25 @@ public sealed class CliOptions
         Options (environment variable in brackets):
           --out <path>             Where to save the file. Default: <guid> in the current folder.
           --base-url <url>         API base used when a bare GUID is given      [ESAS_BASE_URL]
-                                   (default http://localhost:5000). The file URI becomes
+                                   (default http://localhost:5005). The file URI becomes
                                    <base-url>/filer/v1/nedlasting/<guid>.
           --checksum <alg:value>   Expected checksum from the message, e.g. sha256:<hex>.
                                    Algorithms: sha256, sha384, sha512, sha1, md5. Hex or base64.
-          --token-endpoint <url>   Maskinporten (or stub) token endpoint         [ESAS_TOKEN_ENDPOINT]
-                                   (default <base-url>/token).
-          --audience <aud>         Assertion audience (default: token endpoint origin) [ESAS_AUDIENCE]
-          --client-id <id>         Maskinporten client id                        [ESAS_CLIENT_ID]
-          --scope <scope>          Scope to request                              [ESAS_SCOPE]
-          --key <pem-file>         RSA private key that signs the assertion      [ESAS_KEY]
-          --kid <key-id>           Key id for the JWT header                     [ESAS_KID]
+          --scope <scope>          Scope to request (default esas:filer)         [ESAS_SCOPE]
           --max-retries <n>        Retries for 500/503 and broken connections (default 6).
           --chunk-size <bytes>     Ask for this many bytes per request instead of the rest of the file.
           -h, --help               Show this help.
+
+        Tokens, without --key (the API's Development stub):
+          --consumer-org <orgno>   Organization to get a token for (default 123456789) [ESAS_CONSUMER_ORG]
+          --token-endpoint <url>   Default <base-url>/maskinporten-stub/token     [ESAS_TOKEN_ENDPOINT]
+
+        Tokens, with --key (real Maskinporten, JWT-bearer grant):
+          --key <pem-file>         RSA private key that signs the assertion      [ESAS_KEY]
+          --client-id <id>         Maskinporten client id (required)             [ESAS_CLIENT_ID]
+          --kid <key-id>           Key id for the JWT header                     [ESAS_KID]
+          --token-endpoint <url>   Default https://test.maskinporten.no/token    [ESAS_TOKEN_ENDPOINT]
+          --audience <aud>         Assertion audience (default: token endpoint origin) [ESAS_AUDIENCE]
         """;
 
     public bool ShowHelp { get; private init; }
@@ -36,7 +41,8 @@ public sealed class CliOptions
     public Checksum? Checksum { get; private init; }
     public Uri TokenEndpoint { get; private init; } = null!;
     public string? Audience { get; private init; }
-    public string ClientId { get; private init; } = null!;
+    public string? ClientId { get; private init; }
+    public string ConsumerOrganization { get; private init; } = null!;
     public string Scope { get; private init; } = null!;
     public string? KeyPath { get; private init; }
     public string? KeyId { get; private init; }
@@ -83,7 +89,7 @@ public sealed class CliOptions
 
         string? Get(string name, string env) => values.GetValueOrDefault(name) ?? environment(env);
 
-        var baseUrl = new Uri((Get("base-url", "ESAS_BASE_URL") ?? "http://localhost:5000").TrimEnd('/') + "/");
+        var baseUrl = new Uri((Get("base-url", "ESAS_BASE_URL") ?? "http://localhost:5005").TrimEnd('/') + "/");
         Uri fileUri;
         Guid id;
         if (Guid.TryParse(target, out id))
@@ -105,7 +111,21 @@ public sealed class CliOptions
             throw new FormatException($"'{target}' is neither a GUID nor an http(s) URI.");
         }
 
-        var tokenEndpoint = Get("token-endpoint", "ESAS_TOKEN_ENDPOINT") is { } te ? new Uri(te) : new Uri(baseUrl, "token");
+        var keyPath = Get("key", "ESAS_KEY");
+        var clientId = Get("client-id", "ESAS_CLIENT_ID");
+        if (keyPath is not null && clientId is null)
+        {
+            throw new FormatException("--client-id is required with --key.");
+        }
+
+        var tokenEndpoint = Get("token-endpoint", "ESAS_TOKEN_ENDPOINT") is { } te ? new Uri(te)
+            : keyPath is not null ? new Uri("https://test.maskinporten.no/token")
+            : new Uri(baseUrl, "maskinporten-stub/token");
+        var consumerOrganization = Get("consumer-org", "ESAS_CONSUMER_ORG") ?? "123456789";
+        if (consumerOrganization.Length != 9 || !consumerOrganization.All(char.IsAsciiDigit))
+        {
+            throw new FormatException("--consumer-org must be a 9 digit organization number.");
+        }
 
         return new CliOptions
         {
@@ -114,9 +134,10 @@ public sealed class CliOptions
             Checksum = values.TryGetValue("checksum", out var c) ? Checksum.Parse(c) : null,
             TokenEndpoint = tokenEndpoint,
             Audience = Get("audience", "ESAS_AUDIENCE"),
-            ClientId = Get("client-id", "ESAS_CLIENT_ID") ?? "poc-client",
-            Scope = Get("scope", "ESAS_SCOPE") ?? "esas:dokument.les",
-            KeyPath = Get("key", "ESAS_KEY"),
+            ClientId = clientId,
+            ConsumerOrganization = consumerOrganization,
+            Scope = Get("scope", "ESAS_SCOPE") ?? "esas:filer",
+            KeyPath = keyPath,
             KeyId = Get("kid", "ESAS_KID"),
             MaxRetries = ParseNumber(values.GetValueOrDefault("max-retries"), "max-retries") is { } n ? (int)n : 6,
             ChunkSize = ParseNumber(values.GetValueOrDefault("chunk-size"), "chunk-size"),

@@ -10,7 +10,9 @@ public sealed class CliOptionsTests
         var options = CliOptions.Parse(["550e8400-e29b-41d4-a716-446655440000", "--base-url", "https://api.virksomhet.no"], NoEnv);
 
         Assert.Equal("https://api.virksomhet.no/filer/v1/nedlasting/550e8400-e29b-41d4-a716-446655440000", options.FileUri.ToString());
-        Assert.Equal("https://api.virksomhet.no/token", options.TokenEndpoint.ToString());
+        Assert.Equal("https://api.virksomhet.no/maskinporten-stub/token", options.TokenEndpoint.ToString());
+        Assert.Equal("123456789", options.ConsumerOrganization);
+        Assert.Equal("esas:filer", options.Scope);
         Assert.Equal("550e8400-e29b-41d4-a716-446655440000", options.OutputPath);
     }
 
@@ -27,6 +29,16 @@ public sealed class CliOptionsTests
         Assert.Equal("https://test.maskinporten.no/token", options.TokenEndpoint.ToString());
         Assert.Equal("a.pdf", options.OutputPath);
         Assert.Equal("MD5", options.Checksum!.Algorithm.Name);
+    }
+
+    [Fact]
+    public void Key_switches_to_real_maskinporten_and_needs_client_id()
+    {
+        Assert.Throws<FormatException>(() => CliOptions.Parse([Guid.NewGuid().ToString(), "--key", "k.pem"], NoEnv));
+
+        var options = CliOptions.Parse([Guid.NewGuid().ToString(), "--key", "k.pem", "--client-id", "c"], NoEnv);
+
+        Assert.Equal("https://test.maskinporten.no/token", options.TokenEndpoint.ToString());
     }
 
     [Theory]

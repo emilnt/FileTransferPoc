@@ -1,8 +1,10 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/FileTransferPoc.Api/FileTransferPoc.Api.csproj" />
+    <Project Path="src/FileTransferPoc.Client/FileTransferPoc.Client.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/FileTransferPoc.Api.Tests/FileTransferPoc.Api.Tests.csproj" />
+    <Project Path="tests/FileTransferPoc.Client.Tests/FileTransferPoc.Client.Tests.csproj" />
   </Folder>
 </Solution>

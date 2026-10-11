@@ -16,11 +16,11 @@ public sealed class MaskinportenTokenProviderTests
     private readonly FakeTimeProvider _time = new(DateTimeOffset.Parse("2026-10-11T12:00:00Z"));
 
     private MaskinportenTokenProvider Create(TokenEndpointStub stub) =>
-        new(new HttpClient(stub), new MaskinportenOptions
+        new(new HttpClient(stub), new MaskinportenClientOptions
         {
             TokenEndpoint = TokenEndpoint,
             ClientId = "client-123",
-            Scope = "esas:dokument.les",
+            Scope = "esas:filer",
             SigningKey = _key,
             KeyId = "kid-1",
         }, _time);
@@ -49,7 +49,7 @@ public sealed class MaskinportenTokenProviderTests
         var root = claims.RootElement;
         Assert.Equal("client-123", root.GetProperty("iss").GetString());
         Assert.Equal("https://maskinporten.stub/", root.GetProperty("aud").GetString());
-        Assert.Equal("esas:dokument.les", root.GetProperty("scope").GetString());
+        Assert.Equal("esas:filer", root.GetProperty("scope").GetString());
         Assert.Equal(120, root.GetProperty("exp").GetInt64() - root.GetProperty("iat").GetInt64());
         Assert.True(Guid.TryParse(root.GetProperty("jti").GetString(), out _));
     }
@@ -76,6 +76,20 @@ public sealed class MaskinportenTokenProviderTests
         provider.Invalidate();
 
         Assert.Equal("access-2", await provider.GetAccessTokenAsync());
+    }
+
+    [Fact]
+    public async Task Stub_provider_posts_consumer_org_and_scope()
+    {
+        var stub = new TokenEndpointStub();
+        var provider = new MaskinportenStubTokenProvider(new HttpClient(stub), TokenEndpoint, "123456789", "esas:filer", _time);
+
+        Assert.Equal("access-1", await provider.GetAccessTokenAsync());
+        Assert.Equal("access-1", await provider.GetAccessTokenAsync());
+
+        var form = Assert.Single(stub.Forms);
+        Assert.Equal("123456789", form["consumer_org"]);
+        Assert.Equal("esas:filer", form["scope"]);
     }
 
     [Fact]
@@ -119,7 +133,7 @@ public sealed class MaskinportenTokenProviderTests
             _issued++;
             return new HttpResponseMessage(HttpStatusCode.OK)
             {
-                Content = JsonContent.Create(new { access_token = $"access-{_issued}", token_type = "Bearer", expires_in = ExpiresIn, scope = "esas:dokument.les" }),
+                Content = JsonContent.Create(new { access_token = $"access-{_issued}", token_type = "Bearer", expires_in = ExpiresIn, scope = "esas:filer" }),
             };
         }
     }

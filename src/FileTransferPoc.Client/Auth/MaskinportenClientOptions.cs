@@ -2,10 +2,10 @@ using System.Security.Cryptography;
 
 namespace FileTransferPoc.Client.Auth;
 
-/// <summary>Settings for the Maskinporten JWT-bearer grant (or the stubbed issuer used in the PoC).</summary>
-public sealed class MaskinportenOptions
+/// <summary>Settings for the Maskinporten JWT-bearer grant.</summary>
+public sealed class MaskinportenClientOptions
 {
-    /// <summary>Token endpoint, e.g. https://test.maskinporten.no/token or the stub's /token.</summary>
+    /// <summary>Token endpoint, e.g. https://test.maskinporten.no/token.</summary>
     public required Uri TokenEndpoint { get; init; }
 
     /// <summary>Audience for the client assertion. Maskinporten expects the issuer URL; defaults to the token endpoint's origin.</summary>

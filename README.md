@@ -9,6 +9,8 @@ built on .NET 10.
 | :--- | :--- |
 | `src/FileTransferPoc.Api` | ASP.NET Core Web API serving `GET /filer/v1/nedlasting/{guid}` |
 | `tests/FileTransferPoc.Api.Tests` | Unit tests for range handling and integration tests for every status code |
+| `src/FileTransferPoc.Client` | Console client: Maskinporten token, resumable Range download, retries with backoff, checksum check ([README](src/FileTransferPoc.Client/README.md)) |
+| `tests/FileTransferPoc.Client.Tests` | Client unit tests, plus end-to-end tests against the API in memory |
 
 ## Run it
 
